@@ -46,8 +46,8 @@ class AWS:
 
 
     def manage_services(self,service_name):
-        match service_name.lower():
-            case AWSService.s3_bucket:
+        match service_name:
+            case AWSService.s3_bucket.value:
                 return self.s3_client
             case _:
                 return
