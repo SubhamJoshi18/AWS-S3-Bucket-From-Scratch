@@ -55,3 +55,64 @@ class S3Bucket:
 
         except Exception as error:
             print(f'Error Deleting the Bucket, Please Try again, Error {error}')
+
+
+    def download_buckets(self,bucket_name,bucket_prefix,download_path):
+        re_enter = 0
+        try:
+            s3_bucket_path  = self.fileHelper.get_base_s3_bucket_path()
+
+            if not self.fileHelper.check_file_exists(s3_bucket_path):
+                print(f'S3 Bucket Cloud Service Does not Exists, Please Try again later')
+                return
+
+
+            is_bucket_exists =  bucket_name in os.listdir(s3_bucket_path) and os.listdir(s3_bucket_path).count(bucket_name) > 0
+
+            if not is_bucket_exists:
+                print(f'The Bucket Does not Exists, Please Enter the Bucket Appropriate Name {bucket_name}')
+
+
+            valid_bucket_name = list(filter(lambda x : x == bucket_name,os.listdir(s3_bucket_path))).pop()
+
+            valid_bucket_path = os.path.join(s3_bucket_path,valid_bucket_name)
+
+
+            try:
+                exists = []
+                split_prefix = bucket_prefix.split('/') if isinstance(bucket_name,str) else None
+
+                if split_prefix is None:
+                    raise Exception('Error while Determining the Prefix, or the Prefix you provided is incorrect')
+
+                if os.path.isdir(valid_bucket_path) and os.listdir(valid_bucket_path) > 0:
+                     for prefix in split_prefix:
+                         if os.listdir(valid_bucket_path).count(prefix):
+                             re_enter += 1
+                             exists.append(prefix)
+                             break
+
+                updated_path = os.path.join(valid_bucket_path, exists[0])
+                exists.pop()
+                print(f'Going Depth to the Folder by {re_enter}')
+
+                if os.path.isdir(updated_path) and os.listdir(updated_path) > 0:
+                    for prefix in split_prefix:
+                        if os.listdir(updated_path).count(prefix):
+                            re_enter += 1
+                            exists.append(prefix)
+                            break
+
+                updated_path = os.path.join(updated_path,exists[0])
+
+                if isinstance(updated_path,str) and updated_path.__contains__(bucket_prefix):
+                    last_prefix = os.path.basename(updated_path)
+                    print(f'Downloading The Object which are stored on {last_prefix} to {download_path}')
+                    self.fileHelper.download_and_save(updated_path,download_path)
+                    return
+            except Exception as error:
+                raise error
+
+
+        except Exception as error:
+            print(f'Error Downloading the Object From the Bucket : {bucket_prefix}, Please Try again..')

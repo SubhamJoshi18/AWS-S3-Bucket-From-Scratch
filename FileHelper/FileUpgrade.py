@@ -1,4 +1,5 @@
 import json
+import shutil
 import os
 from Constants.Modules import BUCKET_FOLDER
 from FileHelper.JsonUpgrade import JSONUpgrade
@@ -10,8 +11,6 @@ class FileUpgrade:
 
     def __init__(self):
         self.fileHelper = JSONUpgrade()
-
-
 
     def get_base_s3_bucket_path(self):
         return os.path.join(os.getcwd(),BUCKET_FOLDER)
@@ -95,6 +94,25 @@ class FileUpgrade:
 
 
 
+    def download_and_save(self, bucket_path, download_path):
+
+        os.makedirs(download_path, exist_ok=True)
+
+
+        for index, file in enumerate(os.listdir(bucket_path)):
+            file_path = os.path.join(bucket_path, file)
+
+
+            if os.path.isfile(file_path):
+                destination = os.path.join(download_path, file)
+                shutil.copy(file_path, destination)
+                print(f"Downloaded {file} to {destination}")
+            elif os.path.isdir(file_path):
+                destination = os.path.join(download_path,file)
+                shutil.move(file_path,destination)
+                print(f"Downloaded {file} to {destination}")
+            else:
+                print(f"Skipping directory {file}")
 
 
     def base_folder(self):
