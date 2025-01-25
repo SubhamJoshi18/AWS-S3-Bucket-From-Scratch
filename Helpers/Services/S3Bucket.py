@@ -3,8 +3,9 @@ from Exceptions.AWSException import AWSBucketCreationException
 from Constants.Modules import BUCKET_FOLDER
 from FileHelper.FileUpgrade import FileUpgrade
 from datetime import datetime
-
+from Exceptions.AWSException import AWSListObjectException
 from FileHelper.JsonUpgrade import JSONUpgrade
+from Utils.DataUtils import get_folder_size
 
 
 class S3Bucket:
@@ -116,3 +117,76 @@ class S3Bucket:
 
         except Exception as error:
             print(f'Error Downloading the Object From the Bucket : {bucket_prefix}, Please Try again..')
+
+
+
+    def list_objects(self,bucket_name,bucket_prefix):
+        depth_level = 0
+        response = {
+            "Contents": {
+
+                f"{bucket_prefix}" : ""
+            }
+        }
+        try:
+            s3_bucket_path = self.fileHelper.get_base_s3_bucket_path()
+            try:
+                if str(os.listdir(s3_bucket_path).count(bucket_name)).startswith('0'):
+                    print(f'The Bucket You Requested Does not Exists')
+
+                retrieve_valid_bucket = list(filter(lambda  x : x.__contains__(bucket_name),os.listdir(s3_bucket_path))).pop()
+
+                valid_file_path  = os.path.join(s3_bucket_path, retrieve_valid_bucket)
+
+                try:
+                    split_prefix = bucket_prefix.split('/') if isinstance(bucket_prefix,str) and len(bucket_prefix) > 0 else ''
+                    print(f'Fetching the Object at the {split_prefix} Going to depth of {len(split_prefix)}')
+                    for index , item in enumerate(split_prefix):
+                        file_list = os.listdir(valid_file_path)
+                        for files in file_list:
+                            current_path = os.path.join(valid_file_path,files)
+
+                            if  current_path.endswith('.json'):
+                                print(f'Skipping Bucket Info JSON')
+                                continue
+
+                            if os.path.isdir(current_path):
+                                depth_level += 1
+                                dir_size = get_folder_size(current_path)
+                                is_dir_empty = str(dir_size).startswith('0')
+                                if is_dir_empty:
+                                    print('The Directory is Empty')
+                                    continue
+
+                                for item in os.listdir(current_path):
+                                    depth_level += 1
+                                    updated_path = os.path.join(current_path,item)
+                                    if os.path.isdir(updated_path) and get_folder_size(updated_path) > 0:
+
+                                        final_path_array = os.listdir(updated_path)
+                                        final_path = os.path.join(updated_path,final_path_array[0])
+
+                                        if final_path.endswith('.json') or final_path.endswith('.csv'):
+
+                                            if 'Contents' in response:
+                                                response['Contents'][f'{bucket_prefix}'] = final_path
+                                                break
+
+
+                    print(response)
+
+
+                except (ValueError,TypeError) as data_error:
+                    raise Exception(data_error)
+
+                except Exception as sub_error:
+                    raise Exception(sub_error)
+
+
+
+
+            except AWSListObjectException as aws_error:
+                raise Exception(aws_error)
+
+        except Exception as error:
+            print(f'Error listing Object From {bucket_name} with the Prefix : {bucket_prefix}, Error : {error}')

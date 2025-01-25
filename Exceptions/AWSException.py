@@ -33,3 +33,14 @@ class AWSBucketCreationException(Exception):
 
     def get_message(self) -> str:
         return self.message
+
+
+class AWSListObjectException(Exception):
+
+    def __init__(self,message):
+        self.message = message
+        super().__init__(self.message)
+
+    def get_message(self) -> str:
+        return self.message
+
