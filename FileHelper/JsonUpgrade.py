@@ -1,5 +1,9 @@
 import json
+import os.path
+
 import pandas as pd
+from datetime import datetime
+from Utils.DataUtils import get_folder_size
 
 class JSONUpgrade:
 
@@ -18,3 +22,34 @@ class JSONUpgrade:
 
         except Exception as error:
             print(f'An Un-expected error has been occur : Error : {error}')
+
+
+
+    def create_json_file_bucket_name(self,bucket_name,file_path):
+        bucket_json = os.path.join(file_path,f'{bucket_name}.json')
+        try:
+            with open(bucket_json,'w',encoding='utf-8') as file:
+                    extracted_json = self.extract_structure()
+                    if 'Bucket_Name' not in extracted_json and 'Bucket_Size' not in extracted_json:
+
+                        extracted_json['Bucket_Name'] = bucket_name
+                        extracted_json['Bucket_Size'] = get_folder_size(file_path)
+
+                        json.dump(extracted_json, file, ensure_ascii=False, indent=4)
+
+        except Exception as error:
+            print(f'Error Expected while trying to create the json file for the bucket name')
+            return
+
+        else:
+            print('The Bucket Information Has been Dumped Successfully')
+            return
+
+
+
+
+    def extract_structure(self):
+        json_struct = {
+            "Bucket_Created_At":datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        return json_struct

@@ -1,6 +1,6 @@
 import json
 import os
-
+from Constants.Modules import BUCKET_FOLDER
 from FileHelper.JsonUpgrade import JSONUpgrade
 
 
@@ -9,6 +9,11 @@ class FileUpgrade:
 
     def __init__(self):
         self.fileHelper = JSONUpgrade()
+
+
+
+    def get_base_s3_bucket_path(self):
+        return os.path.join(os.getcwd(),BUCKET_FOLDER)
 
 
     def check_file_exists(self,file_path):
@@ -36,6 +41,21 @@ class FileUpgrade:
         except Exception as error:
                 print(f'Un Expected Error : {error}')
 
+
+    def concat_folders(self,path_to_concat,original_path):
+        return os.path.join(original_path,path_to_concat)
+
+
+    def create_buckets_folders(self,bucket_name):
+
+        s3_bucket_path = self.get_base_s3_bucket_path()
+        if os.listdir(s3_bucket_path).count(bucket_name) > 0 or bucket_name in os.listdir(s3_bucket_path):
+            print(f'The Bucket You are Trying to Create Already Exists , Please Try Different Name')
+            return
+        concat_full_path = self.concat_folders(bucket_name,s3_bucket_path)
+        os.makedirs(concat_full_path)
+        print(f"Bucket '{bucket_name}' created successfully at '{concat_full_path}'.")
+        return concat_full_path
 
 
 

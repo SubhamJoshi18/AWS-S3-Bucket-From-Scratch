@@ -3,10 +3,8 @@ import pandas as pd
 
 class AWSSecurity:
 
-
     def __init__(self):
         pass
-
 
     def validate_config(self,client_df : pd.DataFrame,json_df : pd.DataFrame):
         is_valid_config = True
