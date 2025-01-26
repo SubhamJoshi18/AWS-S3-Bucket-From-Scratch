@@ -24,6 +24,16 @@ class JSONUpgrade:
             print(f'An Un-expected error has been occur : Error : {error}')
 
 
+    def create_json_file(self,file_path,item):
+        try:
+            with open(file_path,'w',encoding='utf-8') as file:
+                empty_dict = {}
+                json.dump(empty_dict,file,ensure_ascii=False,indent=4)
+                print(f'JSON Inserted Successfully on the {file_path}')
+        except Exception as error:
+            print(f'Error Expected while trying to create the json file on the {file_path}')
+            return
+
 
     def create_json_file_bucket_name(self,bucket_name,file_path):
         bucket_json = os.path.join(file_path,f'{bucket_name}.json')

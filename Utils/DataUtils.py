@@ -20,3 +20,6 @@ def get_folder_size(folder_path):
             if os.path.isfile(file_path):
                 total_size += os.path.getsize(file_path)
     return total_size
+
+
+

@@ -6,6 +6,7 @@ from datetime import datetime
 from Exceptions.AWSException import AWSListObjectException
 from FileHelper.JsonUpgrade import JSONUpgrade
 from Utils.DataUtils import get_folder_size
+from Exceptions.AWSException import AWSPutObjectException
 
 
 class S3Bucket:
@@ -190,3 +191,92 @@ class S3Bucket:
 
         except Exception as error:
             print(f'Error listing Object From {bucket_name} with the Prefix : {bucket_prefix}, Error : {error}')
+
+
+
+
+    def delete_objects(self,bucket_name,key_prefix):
+        try:
+            depth_level = 0
+            s3_bucket_path = self.fileHelper.get_base_s3_bucket_path()
+            if os.listdir(s3_bucket_path).count(bucket_name) > 0:
+                try:
+                    bucket_path = os.path.join(s3_bucket_path,bucket_name)
+                    if os.path.isdir(bucket_path):
+                        split_prefix = key_prefix.strip().split('/')
+                        base_url = f'{bucket_path}'
+                        for index , prefix in enumerate(split_prefix):
+                            depth_level = index + depth_level
+                            base_url += f'/{prefix}'
+
+                        get_valid_size = get_folder_size(base_url)
+
+                        if get_valid_size == 0:
+                            print(f'The {base_url} Does not Contain Anything Deleting it')
+                            return
+
+                        self.fileHelper.delete_all_items(base_url)
+                        return
+                except AWSListObjectException as aws_error:
+                    raise Exception(aws_error)
+
+
+        except Exception as error:
+            print(f'Error while deleting object from the {key_prefix}')
+
+
+
+    def put_objects(self,bucket_name,bucket_prefix,item):
+        try:
+            depth_level = 0
+            s3_bucket_path = self.fileHelper.get_base_s3_bucket_path()
+            if os.listdir(s3_bucket_path).count(bucket_name) > 0:
+                try:
+                    bucket_path = os.path.join(s3_bucket_path,bucket_name)
+                    if os.path.isdir(bucket_path):
+                        split_prefix = bucket_prefix.strip().split('/')
+                        base_url = f'{bucket_path}'
+                        for index , prefix in enumerate(split_prefix):
+                            depth_level = index + depth_level
+                            base_url += f'/{prefix}'
+
+                        get_valid_size = get_folder_size(base_url)
+                        valid_put = self.fileHelper.select_format_and_put_objects(base_url,item)
+                        return f'Object Inserted Successfully on {bucket_prefix}' if valid_put else f'Object Inserted Failure on {bucket_prefix}'
+                except AWSPutObjectException as aws_error:
+                    raise Exception(aws_error)
+
+
+        except Exception as error:
+            print(f'Error Putting the Object on the {bucket_prefix} , Error : {error}')
+
+
+
+
+
+    def get_objects(self,bucket_name,bucket_prefix):
+        response = {
+            "Contents":{
+                "Keys": []
+            }
+        }
+        try:
+                depth_level = 0
+                s3_bucket_path = self.fileHelper.get_base_s3_bucket_path()
+                if os.listdir(s3_bucket_path).count(bucket_name) > 0:
+                    try:
+                        bucket_path = os.path.join(s3_bucket_path,bucket_name)
+                        if os.path.isdir(bucket_path):
+                            split_prefix = bucket_prefix.strip().split('/')
+                            base_url = f'{bucket_path}'
+                            for index , prefix in enumerate(split_prefix):
+                                depth_level = index + depth_level
+                                base_url += f'/{prefix}'
+                            response['Contents']['Keys'].extend(os.listdir(base_url))
+                            return response
+                    except AWSPutObjectException as aws_error:
+                        raise Exception(aws_error)
+
+        except Exception as error:
+            print(f'Error Putting the Object on the {bucket_prefix} , Error : {error}')
+

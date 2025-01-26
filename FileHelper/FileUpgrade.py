@@ -93,6 +93,17 @@ class FileUpgrade:
             return
 
 
+    def  delete_all_items(self,file_path):
+        for path in os.listdir(file_path):
+            original_path = os.path.join(file_path,path)
+            if os.path.isfile(original_path):
+                os.remove(original_path)
+            else:
+                self.delete_all_items(original_path)
+
+        print(f'All Item Has Been Deleted')
+        return
+
 
     def download_and_save(self, bucket_path, download_path):
 
@@ -117,6 +128,31 @@ class FileUpgrade:
 
     def base_folder(self):
         return 'MockData'
+
+    def select_format_and_put_objects(self,bucket_prefix,item : str):
+        file_format = os.path.basename(item)
+        file_name , file_format = file_format.split('.')
+        match file_format:
+            case 'csv':
+                print(f'Detected CSV Format Item to be Inserted')
+                self.create_csv(bucket_prefix,item)
+                return
+            case 'json':
+                print(f'Detected JSON Format Item to be Inserted')
+                self.fileHelper.create_json_file_bucket_name(bucket_prefix,item)
+            case _:
+                return {
+                    "message": "Invalid Format"
+                }
+
+
+    def create_csv(self,bucket_prefix,file_name):
+       return shutil.copy(file_name,bucket_prefix)
+
+
+
+
+
 
     def __repr__(self):
         return 'This is a class to upgrade the file'
