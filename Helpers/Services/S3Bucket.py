@@ -1,4 +1,6 @@
 import os
+import hashlib
+import shutil
 from Exceptions.AWSException import AWSBucketCreationException
 from Constants.Modules import BUCKET_FOLDER
 from FileHelper.FileUpgrade import FileUpgrade
@@ -280,3 +282,53 @@ class S3Bucket:
         except Exception as error:
             print(f'Error Putting the Object on the {bucket_prefix} , Error : {error}')
 
+
+
+    def generate_pre_signed_url(self,bucket_name:str,prefix:str) -> dict:
+        mock_payload = {
+            "pre_signed_url" : ""
+        }
+        deep_folder = 0
+        s3_bucket_path = self.fileHelper.get_base_s3_bucket_path()
+        prefix_str = f'{prefix.strip()}'
+        try:
+            is_valid_dir = len(os.listdir(s3_bucket_path)) > 0
+            if is_valid_dir:
+                is_valid_bucket  = list(filter(lambda x : len(x) > 0 and x == bucket_name,os.listdir(s3_bucket_path))).pop()
+
+                if not is_valid_bucket:
+                    print('The Bucket Does not Exists, Please Enter the Valid Bucket Name')
+
+                valid_bucket_path = os.path.join(s3_bucket_path,is_valid_bucket)
+
+
+                print(f'Going Inside the Bucket {valid_bucket_path}')
+                deep_folder += 1
+                for index , folder in enumerate(os.listdir(valid_bucket_path)):
+                    if len(folder.strip()) > 0 and prefix_str.__contains__(folder):
+                        prefix_array = [prefix_str,folder]
+                        prefix_str = '/'.join(prefix_array)
+
+
+                    if os.path.isdir(folder) and get_folder_size(os.path.join(valid_bucket_path,folder)) > 0:
+                        deep_folder += 1
+                        for index , sub_folder in enumerate(os.listdir(os.path.join(valid_bucket_path,folder))):
+                            if len(sub_folder.strip()) > 0 and prefix_str.__contains__(sub_folder):
+                                prefix_array = [prefix_str,sub_folder]
+                                prefix_str = '/'.join(prefix_array)
+                                break
+                            else:
+                                print(f'The Prefix {prefix_str} Does not Exists in the {sub_folder} , Please Enter the Valid Prefix')
+                                break
+                        break
+
+            json_files = os.listdir(prefix_str).pop()
+            mock_sha = hashlib.sha256(json_files.encode()).hexdigest()
+            prefix_str = f'{prefix_str}/{mock_sha}?ExpiresIn=3600'
+            if 'pre_signed_url' in mock_payload :
+                mock_payload['pre_signed_url'] = prefix_str
+
+            return mock_payload
+
+        except Exception as error:
+            print(f'Error Generating the Pre-Signed URL for the prefix {prefix} , Error : {error}')
